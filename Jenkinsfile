@@ -55,11 +55,14 @@ pipeline {
         }
 
         stage('Deploy') {
-            steps {
-                bat "docker rm -f %APP_NAME% || echo ignored"
-                bat "docker run -d --name %APP_NAME% -p 8000:8000 %REGISTRY%/%DOCKER_IMAGE%"
-            }
-        }
+    steps {
+        bat "docker rm -f %APP_NAME% || echo ignored"
+        // map host 8000 to container 5000
+        bat "docker run -d --name %APP_NAME% -p 8000:5000 %REGISTRY%/%DOCKER_IMAGE%"
+    }
+}
+
+
 
        stage('Monitoring') {
     steps {
