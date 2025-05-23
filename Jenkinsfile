@@ -69,30 +69,28 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-    steps {
-        // Stop and remove any existing container (ignoring errors), then run locally
-        bat """
-          docker rm -f %APP_NAME% || echo ignored
-          docker run -d --name %APP_NAME% -p 8000:8000 %REGISTRY%/%DOCKER_IMAGE%
-        """
-    }
-}
+                stage('Deploy') {
+            steps {
+                bat """
+                  docker rm -f %APP_NAME% || echo ignored
+                  docker run -d --name %APP_NAME% -p 8000:8000 %REGISTRY%/%DOCKER_IMAGE%
+                """
+            }
+        }
 
+        stage('Monitoring') {
+            steps {
+                // 1) Health check
+                bat 'curl -sf http://localhost:8000/healthz || exit 1'
 
-                stage('Monitoring') {
-    steps {
-        // 1) Verify the health endpoint on localhost
-        bat 'curl -sf http://localhost:8000/healthz || exit 1'
+                // 2) Metrics snapshot
+                bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
 
-        // 2) Fetch Prometheus metrics snapshot and save it
-        bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
-
-        // 3) Archive the metrics file
-        archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
-    }
-}
-
+                // 3) Archive
+                archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
+            }
+        }
+    }           // << closes `stages`
 
     post {
         success {
@@ -102,5 +100,5 @@ pipeline {
             echo "❌ Build ${env.BUILD_NUMBER} failed."
         }
     }
-}          // <-- closes pipeline
+}               // << closes `pipeline`
 
