@@ -54,8 +54,7 @@ pipeline {
       }
       post {
         always {
-          // parse and show summary, or fail-on-high-severity
-          // you can hook in Jenkins Dependency-Check plugin here
+          echo "✅ Security scan completed (reports archived)"
         }
       }
     }
