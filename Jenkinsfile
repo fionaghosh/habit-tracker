@@ -9,7 +9,9 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            steps { checkout scm }
+            steps {
+                checkout scm
+            }
         }
 
         stage('Build') {
@@ -33,7 +35,6 @@ pipeline {
 
         stage('Security Scan') {
             steps {
-                // Mount workspace into container so HTML lands on host
                 bat 'docker run --rm -v "%WORKSPACE%":/app -w /app %DOCKER_IMAGE% bandit -r . -f html -o bandit-report.html --exit-zero'
                 archiveArtifacts artifacts: 'bandit-report.html', fingerprint: true
             }
@@ -55,25 +56,24 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                // Redeploy locally on the Jenkins agent
                 bat "docker rm -f %APP_NAME% || echo ignored"
                 bat "docker run -d --name %APP_NAME% -p 8000:8000 %REGISTRY%/%DOCKER_IMAGE%"
             }
         }
 
         stage('Monitoring') {
-    steps {
-        // 1) Verify the health endpoint on localhost
-        bat 'curl -sf http://localhost:8000/healthz || exit 1'
+            steps {
+                // 1) Health check
+                bat 'curl -sf http://localhost:8000/healthz || exit 1'
 
-        // 2) Fetch Prometheus metrics snapshot and save it
-        bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
+                // 2) Metrics snapshot
+                bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
 
-        // 3) Archive the metrics file
-        archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
-    }
-}
-
+                // 3) Archive
+                archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
+            }
+        }
+    }  // end stages
 
     post {
         success {
@@ -83,4 +83,5 @@ pipeline {
             echo "❌ Build ${env.BUILD_NUMBER} failed."
         }
     }
-}
+}  // end pipeline
+
