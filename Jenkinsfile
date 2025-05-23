@@ -31,13 +31,22 @@ pipeline {
     }
 
     stage('Code Quality') {
-      steps {
-        // SonarQube example (requires the SonarQube plugin & config)
-        withSonarQubeEnv('MySonarQubeServer') {
-          bat 'sonar-scanner -Dsonar.projectKey=habit-tracker'
-        }
-      }
+  steps {
+    // this name must match exactly what you put in the "Name" field above
+    withSonarQubeEnv('SonarCloud') {
+      // run the scanner CLI with your real project/org keys
+      bat """
+        sonar-scanner ^
+          -Dsonar.host.url=https://sonarcloud.io ^
+          -Dsonar.organization=<your-organization-key> ^
+          -Dsonar.projectKey=<your-org>_<your-project> ^
+          -Dsonar.sources=. 
+      """
     }
+  }
+}
+
+
 
     stage('Security Scan') {
       steps {
