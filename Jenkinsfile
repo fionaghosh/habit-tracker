@@ -64,37 +64,35 @@ pipeline {
 
 
 
-       stage('Monitoring') {
+      stage('Monitoring') {
   steps {
-    // Try up to 5 times, sleeping 3s between attempts
-    bat """
-      @echo off
-      set SUCCESS=0
-      for /L %%i in (1,1,5) do (
-        echo Attempt %%i: checking health…
-        curl -sf http://localhost:8000/healthz
-        if not ERRORLEVEL 1 (
-          set SUCCESS=1
-          goto :BREAK
-        )
-        echo   failed, waiting 3s…
-        timeout /t 3 /nobreak >NUL
-      )
-      :BREAK
-      if "%SUCCESS%"=="1" (
-        echo Health check passed.
-      ) else (
-        echo Health check STILL failing after 5 tries.
-        exit /b 1
-      )
-    """
+    script {
+      // Try up to 5 times
+      def healthy = false
+      for (int i = 1; i <= 5; i++) {
+        try {
+          bat 'curl -sf http://localhost:8000/healthz'
+          healthy = true
+          echo "✔ Health check passed on attempt ${i}"
+          break
+        } catch (err) {
+          echo "✖ Health check failed on attempt ${i}, retrying in 3s…"
+          sleep 3
+        }
+      }
+      if (!healthy) {
+        error "❌ Health check still failing after 5 attempts—bailing out."
+      }
 
-    // grab metrics once we're healthy
-    bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
+      // Now grab metrics
+      bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
 
-    archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
+      // And archive them
+      archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
+    }
   }
 }
+
     }  // <-- closes stages
 
 
