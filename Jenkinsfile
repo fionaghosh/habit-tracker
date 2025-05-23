@@ -62,13 +62,18 @@ pipeline {
         }
 
         stage('Monitoring') {
-            steps {
-                bat 'curl -sf http://localhost:8000/healthz || exit 1'
-                bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
-                archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
-            }
-        }
+    steps {
+        // 1) Verify the health endpoint on localhost
+        bat 'curl -sf http://localhost:8000/healthz || exit 1'
+
+        // 2) Fetch Prometheus metrics snapshot and save it
+        bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
+
+        // 3) Archive the metrics file
+        archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
     }
+}
+
 
     post {
         success {
