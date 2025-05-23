@@ -39,13 +39,20 @@ pipeline {
 
         stage('Security Scan') {
     steps {
-        // Run Bandit, produce HTML report, but don’t fail the build on issues
-        bat "docker run --rm %DOCKER_IMAGE% bandit -r . -f html -o bandit-report.html --exit-zero"
+        // Run Bandit inside a container that mounts the Jenkins workspace at /app
+        bat """
+            docker run --rm ^
+              -v "%WORKSPACE%":/app ^
+              -w /app ^
+              %DOCKER_IMAGE% ^
+              bandit -r . -f html -o bandit-report.html --exit-zero
+        """
 
-        // Archive the Bandit report for review
+        // Now the report lives in the workspace, archive it
         archiveArtifacts artifacts: 'bandit-report.html', fingerprint: true
     }
 }
+
 
 
         stage('Release') {
