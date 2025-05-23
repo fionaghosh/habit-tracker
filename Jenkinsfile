@@ -80,16 +80,27 @@ pipeline {
 }
 
 
-        stage('Monitoring') {
-    steps {
-        // Verify the health endpoint on localhost
-        bat 'curl -sf http://localhost:8000/healthz || exit 1'
+                stage('Monitoring') {
+            steps {
+                // Verify the health endpoint on localhost
+                bat 'curl -sf http://localhost:8000/healthz || exit 1'
 
-        // Fetch Prometheus metrics snapshot and save it
-        bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
+                // Fetch Prometheus metrics snapshot and save it
+                bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
 
-        // Archive the metrics file
-        archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
+                // Archive the metrics file
+                archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
+            }
+        }  // <-- closes Monitoring stage
+    }      // <-- closes stages
+
+    post {
+        success {
+            echo "🎉 Build ${env.BUILD_NUMBER} succeeded!"
+        }
+        failure {
+            echo "❌ Build ${env.BUILD_NUMBER} failed."
+        }
     }
-}
+}          // <-- closes pipeline
 
