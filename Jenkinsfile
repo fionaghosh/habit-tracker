@@ -62,18 +62,18 @@ pipeline {
         }
 
         stage('Monitoring') {
-            steps {
-                // 1) Health check
-                bat 'curl -sf http://localhost:8000/healthz || exit 1'
+    steps {
+        // 1) Health check
+        bat 'curl -sf http://localhost:8000/healthz || exit 1'
 
-                // 2) Metrics snapshot
-                bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
+        // 2) Metrics snapshot
+        bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
 
-                // 3) Archive
-                archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
-            }
-        }
-    }  // end stages
+        // 3) Archive the snapshot
+        archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
+    }
+}
+
 
     post {
         success {
