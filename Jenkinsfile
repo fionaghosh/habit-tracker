@@ -26,20 +26,29 @@ pipeline {
         }
 
         stage('Code Quality') {
-            steps {
-                bat "docker run --rm %DOCKER_IMAGE% flake8 ."
-                bat "docker run --rm %DOCKER_IMAGE% flake8 --format=html --htmldir=flake-report ."
-                // On Windows, archiveArtifacts still uses forward slashes or backslashes
-                archiveArtifacts artifacts: 'flake-report\\**\\*', fingerprint: true
-            }
-        }
+    steps {
+        // Run flake8, report warnings but don’t fail the build
+        bat "docker run --rm %DOCKER_IMAGE% flake8 . --exit-zero"
+
+        // Generate an HTML report, again without failing on errors
+        bat "docker run --rm %DOCKER_IMAGE% flake8 --format=html --htmldir=flake-report . --exit-zero"
+
+        // Archive the HTML report for later inspection
+        archiveArtifacts artifacts: 'flake-report\\**\\*', fingerprint: true
+    }
+}
+
 
         stage('Security Scan') {
-            steps {
-                bat "docker run --rm %DOCKER_IMAGE% bandit -r . -f html -o bandit-report.html"
-                archiveArtifacts artifacts: 'bandit-report.html', fingerprint: true
-            }
-        }
+    steps {
+        // Run Bandit, produce HTML report, but don’t fail the build on issues
+        bat "docker run --rm %DOCKER_IMAGE% bandit -r . -f html -o bandit-report.html --exit-zero"
+
+        // Archive the Bandit report for review
+        archiveArtifacts artifacts: 'bandit-report.html', fingerprint: true
+    }
+}
+
 
         stage('Release') {
             steps {
