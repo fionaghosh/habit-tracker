@@ -65,19 +65,36 @@ pipeline {
 
 
        stage('Monitoring') {
-    steps {
-        // 1) Health check – fails if the endpoint isn’t “OK”
-        bat 'curl -sf http://localhost:8000/healthz || exit 1'
+  steps {
+    // Try up to 5 times, sleeping 3s between attempts
+    bat """
+      @echo off
+      set SUCCESS=0
+      for /L %%i in (1,1,5) do (
+        echo Attempt %%i: checking health…
+        curl -sf http://localhost:8000/healthz
+        if not ERRORLEVEL 1 (
+          set SUCCESS=1
+          goto :BREAK
+        )
+        echo   failed, waiting 3s…
+        timeout /t 3 /nobreak >NUL
+      )
+      :BREAK
+      if "%SUCCESS%"=="1" (
+        echo Health check passed.
+      ) else (
+        echo Health check STILL failing after 5 tries.
+        exit /b 1
+      )
+    """
 
-        // 2) Fetch Prometheus metrics snapshot into a file
-        bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
+    // grab metrics once we're healthy
+    bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
 
-        // 3) Archive that file so you can download it from Jenkins
-        archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
-    }
-}  // <-- this closes Monitoring stage
-
-
+    archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
+  }
+}
     }  // <-- closes stages
 
 
