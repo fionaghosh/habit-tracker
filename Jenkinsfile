@@ -11,29 +11,36 @@ pipeline {
         stage('Checkout') {
             steps { checkout scm }
         }
+
         stage('Build') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE} ."
+                // Inside bat, use %DOCKER_IMAGE% not ${DOCKER_IMAGE}
+                bat "docker build -t %DOCKER_IMAGE% ."
             }
         }
+
         stage('Test') {
             steps {
-                sh "docker run --rm ${DOCKER_IMAGE} pytest -q tests"
+                bat "docker run --rm %DOCKER_IMAGE% pytest -q tests"
             }
         }
+
         stage('Code Quality') {
             steps {
-                sh "docker run --rm ${DOCKER_IMAGE} flake8 ."
-                sh "docker run --rm ${DOCKER_IMAGE} flake8 --format=html --htmldir=flake-report ."
-                archiveArtifacts 'flake-report/**/*'
+                bat "docker run --rm %DOCKER_IMAGE% flake8 ."
+                bat "docker run --rm %DOCKER_IMAGE% flake8 --format=html --htmldir=flake-report ."
+                // On Windows, archiveArtifacts still uses forward slashes or backslashes
+                archiveArtifacts artifacts: 'flake-report\\**\\*', fingerprint: true
             }
         }
+
         stage('Security Scan') {
             steps {
-                sh "docker run --rm ${DOCKER_IMAGE} bandit -r . -f html -o bandit-report.html"
-                archiveArtifacts 'bandit-report.html'
+                bat "docker run --rm %DOCKER_IMAGE% bandit -r . -f html -o bandit-report.html"
+                archiveArtifacts artifacts: 'bandit-report.html', fingerprint: true
             }
         }
+
         stage('Release') {
             steps {
                 withCredentials([usernamePassword(
@@ -41,27 +48,30 @@ pipeline {
                     usernameVariable: 'DOCKERHUB_USER',
                     passwordVariable: 'DOCKERHUB_PASS'
                 )]) {
-                    sh "docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS ${REGISTRY}"
-                    sh "docker tag ${DOCKER_IMAGE} ${REGISTRY}/${DOCKER_IMAGE}"
-                    sh "docker push ${REGISTRY}/${DOCKER_IMAGE}"
+                    bat "docker login -u %DOCKERHUB_USER% -p %DOCKERHUB_PASS% %REGISTRY%"
+                    bat "docker tag %DOCKER_IMAGE% %REGISTRY%/%DOCKER_IMAGE%"
+                    bat "docker push %REGISTRY%/%DOCKER_IMAGE%"
                 }
             }
         }
+
         stage('Deploy') {
             steps {
-                sh """
-                  ssh deploy@your-server \\
-                    'docker pull ${REGISTRY}/${DOCKER_IMAGE} && \\
-                     docker rm -f ${APP_NAME} || true && \\
-                     docker run -d --name ${APP_NAME} -p 8000:8000 ${REGISTRY}/${DOCKER_IMAGE}'
+                // If SSH is available on your Windows node
+                bat """
+                  ssh deploy@your-server ^
+                    "docker pull %REGISTRY%/%DOCKER_IMAGE% && ^
+                     docker rm -f %APP_NAME% || echo ignored && ^
+                     docker run -d --name %APP_NAME% -p 8000:8000 %REGISTRY%/%DOCKER_IMAGE%"
                 """
             }
         }
+
         stage('Monitoring') {
             steps {
-                sh "curl -sf http://your-server:8000/healthz || exit 1"
-                sh "curl http://your-server:8000/metrics > metrics_snapshot.txt"
-                archiveArtifacts 'metrics_snapshot.txt'
+                bat "curl -sf http://your-server:8000/healthz || exit 1"
+                bat "curl http://your-server:8000/metrics > metrics_snapshot.txt"
+                archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
             }
         }
     }
