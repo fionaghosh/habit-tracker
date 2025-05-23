@@ -28,15 +28,13 @@ pipeline {
         stage('Code Quality') {
     steps {
         // Run flake8, report warnings but don’t fail the build
-        bat "docker run --rm %DOCKER_IMAGE% flake8 . --exit-zero"
+        bat "docker run --rm %DOCKER_IMAGE% flake8 . --exit-zero > flake-report.txt"
 
-        // Generate an HTML report, again without failing on errors
-        bat "docker run --rm %DOCKER_IMAGE% flake8 --format=html --htmldir=flake-report . --exit-zero"
-
-        // Archive the HTML report for later inspection
-        archiveArtifacts artifacts: 'flake-report\\**\\*', fingerprint: true
+        // Archive the flake8 text report
+        archiveArtifacts artifacts: 'flake-report.txt', fingerprint: true
     }
 }
+
 
 
         stage('Security Scan') {
