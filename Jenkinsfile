@@ -63,15 +63,19 @@ pipeline {
 
         stage('Monitoring') {
             steps {
-                // 1) Health check
+                // 1) Health check – fails if the endpoint isn’t “OK”
                 bat 'curl -sf http://localhost:8000/healthz || exit 1'
-                // 2) Metrics
+
+                // 2) Fetch Prometheus metrics snapshot into a file
                 bat 'curl http://localhost:8000/metrics > metrics_snapshot.txt'
-                // 3) Archive
+
+                // 3) Archive that file so you can download it from Jenkins
                 archiveArtifacts artifacts: 'metrics_snapshot.txt', fingerprint: true
             }
-        }
-    }  // end stages
+        }  // <-- closes Monitoring stage
+
+    }  // <-- closes stages
+
 
     post {
         success {
