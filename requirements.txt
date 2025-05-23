@@ -1,0 +1,7 @@
+Flask
+Flask-SQLAlchemy
+Flask-JWT-Extended
+prometheus_client
+pytest
+flake8
+bandit
