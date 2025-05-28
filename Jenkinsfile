@@ -34,21 +34,23 @@ pipeline {
     }
 
     stage('Code Quality') {
-      steps {
-        withSonarQubeEnv('SonarCloud') {
-          script {
-            def scannerHome = tool name: 'DefaultScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-            // windows bat call
-            bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" ^
-              -Dsonar.host.url=%SONAR_HOST_URL% ^
-              -Dsonar.login=%SONAR_AUTH_TOKEN% ^
-              -Dsonar.organization=%SONAR_ORGANIZATION% ^
-              -Dsonar.projectKey=%SONAR_PROJECT_KEY% ^
-              -Dsonar.sources=."
-          }
-        }
+  steps {
+    withSonarQubeEnv('SonarCloud') {
+      script {
+        def scannerHome = tool name: 'DefaultScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+        bat """
+          \"${scannerHome}\\bin\\sonar-scanner.bat\" ^
+            -Dsonar.host.url=%SONAR_HOST_URL% ^
+            -Dsonar.login=%SONAR_AUTH_TOKEN% ^
+            -Dsonar.organization=%SONAR_ORGANIZATION% ^
+            -Dsonar.projectKey=%SONAR_PROJECT_KEY% ^
+            -Dsonar.sources=.
+        """
       }
     }
+  }
+}
+
 
 
 
