@@ -57,21 +57,13 @@ pipeline {
 
 stage('Security Scan') {
   steps {
-    script {
-      // pick up the Dependency-Check installation by name
-      def dcHome = tool name: 'DependencyCheck',
-                        type: 'org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation'
-
-      // run dependency-check.bat from the installed home
-      bat """
-        \"${dcHome}\\bin\\dependency-check.bat\" ^
-          --project habit-tracker ^
-          --scan . ^
-          --out reports\\\\security
-      """
-    }
-
-    // archive the generated report files
+    // Jenkins will set TOOL_DEPENDENCY_CHECK_HOME for you when you name the tool
+    bat """
+      \"%TOOL_DEPENDENCY_CHECK_HOME%\\bin\\dependency-check.bat\" ^
+        --project habit-tracker ^
+        --scan . ^
+        --out reports\\\\security
+    """
     archiveArtifacts artifacts: 'reports/security/**', fingerprint: true
   }
   post {
