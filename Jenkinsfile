@@ -55,18 +55,33 @@ pipeline {
 
 
 
-    stage('Security Scan') {
-      steps {
-        // OWASP Dependency-Check (example)
-        bat 'dependency-check.bat --project habit-tracker --scan . --out reports\\security'
-        archiveArtifacts artifacts: 'reports/security/**', fingerprint: true
-      }
-      post {
-        always {
-          echo "✅ Security scan completed (reports archived)"
-        }
-      }
+stage('Security Scan') {
+  steps {
+    script {
+      // pull in the Dependency-Check installation you configured under Global Tool Configuration
+      // (replace 'DependencyCheck' with the exact name you gave it)
+      def dcHome = tool name: 'DependencyCheck', type: 'org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation'
+
+      // run the bundled CLI from that home
+      bat """
+        \"${dcHome}\\bin\\dependency-check.bat\" ^
+          --project habit-tracker ^
+          --scan . ^
+          --out reports\\\\security
+      """
     }
+
+    // archive whatever got produced (won’t fail if it’s empty)
+    archiveArtifacts artifacts: 'reports/security/**', allowEmptyArchive: true, fingerprint: true
+  }
+
+  post {
+    always {
+      echo "✅ Security scan completed (reports archived)"
+    }
+  }
+}
+
 
     stage('Deploy to Staging') {
       steps {
