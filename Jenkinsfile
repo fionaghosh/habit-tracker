@@ -58,11 +58,8 @@ pipeline {
 stage('Security Scan') {
   steps {
     script {
-      // pull in the Dependency-Check installation you configured under Global Tool Configuration
-      // (replace 'DependencyCheck' with the exact name you gave it)
+      // this must match the “Name” you give in Manage Jenkins → Global Tool Configuration → OWASP Dependency-Check
       def dcHome = tool name: 'DependencyCheck', type: 'org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation'
-
-      // run the bundled CLI from that home
       bat """
         \"${dcHome}\\bin\\dependency-check.bat\" ^
           --project habit-tracker ^
@@ -70,11 +67,8 @@ stage('Security Scan') {
           --out reports\\\\security
       """
     }
-
-    // archive whatever got produced (won’t fail if it’s empty)
-    archiveArtifacts artifacts: 'reports/security/**', allowEmptyArchive: true, fingerprint: true
+    archiveArtifacts artifacts: 'reports/security/**', fingerprint: true
   }
-
   post {
     always {
       echo "✅ Security scan completed (reports archived)"
