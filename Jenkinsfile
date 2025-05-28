@@ -2,9 +2,12 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_IMAGE = "fionaghosh/habit-tracker:${env.BUILD_NUMBER}"
-    REGISTRY     = "docker.io"
-    APP_NAME     = "habit-tracker"
+    DOCKER_IMAGE      = "fionaghosh/habit-tracker:${env.BUILD_NUMBER}"
+    REGISTRY          = "docker.io"
+    APP_NAME          = "habit-tracker"
+
+    SONAR_PROJECT_KEY = "fionaghosh_habit-tracker"
+    SONAR_ORGANIZATION= "fionaghosh"
   }
 
   stages {
@@ -31,19 +34,21 @@ pipeline {
     }
 
     stage('Code Quality') {
-  steps {
-    withSonarQubeEnv('SonarCloud') {
-      // run scanner with your real org & project keys
-      bat """
-        sonar-scanner ^
-          -Dsonar.host.url=https://sonarcloud.io ^
-          -Dsonar.organization=fionaghosh ^
-          -Dsonar.projectKey=fionaghosh_habit-tracker ^
-          -Dsonar.sources=.
-      """
+      steps {
+        withSonarQubeEnv('SonarCloud') {
+          script {
+            def scannerHome = tool name: 'DefaultScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+            // windows bat call
+            bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" ^
+              -Dsonar.host.url=%SONAR_HOST_URL% ^
+              -Dsonar.login=%SONAR_AUTH_TOKEN% ^
+              -Dsonar.organization=%SONAR_ORGANIZATION% ^
+              -Dsonar.projectKey=%SONAR_PROJECT_KEY% ^
+              -Dsonar.sources=."
+          }
+        }
+      }
     }
-  }
-}
 
 
 
