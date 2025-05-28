@@ -58,10 +58,11 @@ pipeline {
 stage('Security Scan') {
   steps {
     script {
-      // this name must exactly match the "Name" in Global Tool Configuration
-      def dcHome = tool name: 'DependencyCheck', type: org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation
+      // pick up the Dependency-Check installation by name
+      def dcHome = tool name: 'DependencyCheck',
+                        type: 'org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation'
 
-      // invoke the bat from the installed home
+      // run dependency-check.bat from the installed home
       bat """
         \"${dcHome}\\bin\\dependency-check.bat\" ^
           --project habit-tracker ^
@@ -70,7 +71,7 @@ stage('Security Scan') {
       """
     }
 
-    // archive whatever reports it writes
+    // archive the generated report files
     archiveArtifacts artifacts: 'reports/security/**', fingerprint: true
   }
   post {
