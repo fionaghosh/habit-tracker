@@ -58,8 +58,10 @@ pipeline {
 stage('Security Scan') {
   steps {
     script {
-      // this must match the “Name” you give in Manage Jenkins → Global Tool Configuration → OWASP Dependency-Check
-      def dcHome = tool name: 'DependencyCheck', type: 'org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation'
+      // this name must exactly match the "Name" in Global Tool Configuration
+      def dcHome = tool name: 'DependencyCheck', type: org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation
+
+      // invoke the bat from the installed home
       bat """
         \"${dcHome}\\bin\\dependency-check.bat\" ^
           --project habit-tracker ^
@@ -67,6 +69,8 @@ stage('Security Scan') {
           --out reports\\\\security
       """
     }
+
+    // archive whatever reports it writes
     archiveArtifacts artifacts: 'reports/security/**', fingerprint: true
   }
   post {
