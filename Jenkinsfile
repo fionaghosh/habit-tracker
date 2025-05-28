@@ -32,19 +32,19 @@ pipeline {
 
     stage('Code Quality') {
   steps {
-    // this name must match exactly what you put in the "Name" field above
     withSonarQubeEnv('SonarCloud') {
-      // run the scanner CLI with your real project/org keys
+      // run scanner with your real org & project keys
       bat """
         sonar-scanner ^
           -Dsonar.host.url=https://sonarcloud.io ^
-          -Dsonar.organization=<your-organization-key> ^
-          -Dsonar.projectKey=<your-org>_<your-project> ^
-          -Dsonar.sources=. 
+          -Dsonar.organization=fionaghosh ^
+          -Dsonar.projectKey=fionaghosh_habit-tracker ^
+          -Dsonar.sources=.
       """
     }
   }
 }
+
 
 
 
